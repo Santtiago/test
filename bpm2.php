@@ -3,15 +3,35 @@
   
     require_once "/var/www/rest-excel/lib/nusoap.php";
 
+        /*
+        * enviaNomina web service method
+        * This method recive:
+        * $usuario  = user_name
+        * $password = pass
+        * $app_uid  = processmaker app_uid
+        * $nomina   = encode file on  string base64  
+        */
 
         function envioNomina($usuario, $password, $app_uid, $id_sgn, $nomina) {
 
             $user = $usuario;
             $pass = $password;
 
+            /*
+            *
+            *
+            *
+            */
+
             $Endpoint = "http://staging.portal-excel.com:10080/sysworkflow/en/classic/services/wsdl2";
             $client = new SoapClient($Endpoint);
             $params = array('userid'=>$user, 'password'=>$pass);
+
+            /*
+            * On line 36, i call to process maker login web service
+            * and if the call result is "ok", the code create a new path
+            * and decode de $nomina parameter to get a file.
+            */
 
             $result = $client->__SoapCall('login', array($params));
            
@@ -26,11 +46,19 @@
                 $x = base64_decode($nomina);
                 file_put_contents($pathFile,base64_decode($nomina));
        
-                //require_once "/var/www/rest-excel/classExcel.php";
+
+                /*
+                * On line 59 i create a new object of grandCreater class,
+                * the grandCreater class parse a xml file and return an array from the data of the same file
+                *
+                *
+                *
+                *
+                */
+
                 require_once "/var/www/rest-excel/classExcel2.php";
                 $class = new grandCreater();
-                $location  = $pathFile;
-                //$location2 = $pathFile2;                  
+                $location  = $pathFile;               
                 $params   = $class->grandReaderLayout($location);
 
                 $params = json_decode( json_encode($params), true);
@@ -40,10 +68,15 @@
                 $rfc_Cliente  = $params[0]['RFC_CLIENTE'];
                 $rfc_Pagadora = $params[0]['RFC_PAGADORA'];
                 
-                
+                /*
+                * On line 70 i create a new object of routeCaseSGN class,
+                * on line 71 the object call a method of the routeCaseSGN class and send parameters
+                *
+                *
+                */
                 require_once "/var/www/rest-excel/consumeCaso.php";
+                
                 $route     = new routeCaseSGN();     
-
                 $execution = $route->buscaNomina($rfc_Cliente, $rfc_Pagadora, $location, $params);
          
                 return "El archivo se recibio correntamente".print_r($execution, true).print_r($result, true);
