@@ -5,11 +5,15 @@ require_once "/var/www/rest-excel/upload_file.php";
 
 
 
-
+/*
+* The routeCaseSGN class save the data on PMT_Tables,
+* find appuid of processmaker cases
+* and upload files to processmaker through Web services
+*/
 
 class routeCaseSGN{
 
-    //function buscaNomina($rfc_Cliente, $rfc_Pagadora, $path, $params, $path2){
+
     function buscaNomina($rfc_Cliente, $rfc_Pagadora, $path, $params){
         $caso = new DBSearch(); 
         $app_uid  = $caso->buscarCaso($rfc_Cliente, $rfc_Pagadora);
@@ -17,16 +21,24 @@ class routeCaseSGN{
 
         if($app_uid){
             
+            /*
+            *The subeArchivo method upload the file to processmaker
+            */
             /********SUBE ARCHIVO SGN******/
             $subido     = $this->subeArchivo($app_uid, $path);
+            
 
-            //if(isset($path2)){
-                /********SUBE ARCHIVO SGN ADJUNTO******/
-                //$subido = $this->subeArchivo2($app_uid, $path2);
-            //}
-           
+            
+            /*
+            *The login method is a processmaker web service 
+            */
             /********LOGIN WS PROCESSMAKER******/
             $sessionId  = $this->login();
+
+
+             /*
+            *The insertar_SGN method save the info inside data tables
+            */
             /********ALMACENA INFO DE ARCHIVO SGN******/
             $insertado  = $caso->insertar_SGN($app_uid, $params);
 
@@ -40,7 +52,7 @@ class routeCaseSGN{
             $caso->actualizarCaso($app_uid);
             
             return $app_uid." ".$sessionId.$insertado.$subido;
-            //return $app_uid."\n\n".$insertado."\n\n".print_r($params, true);
+
 
         }else{
             return "No se encontro caso";
@@ -81,8 +93,7 @@ class routeCaseSGN{
 
             try {
 
-                //$sessionId = '769878572562a887e8df4d9034463287';
-                //$caseId    = '410137061562a7ec3ebdd50000925979';
+
         
                 $caseId = $app_uid; 
     
@@ -96,12 +107,10 @@ class routeCaseSGN{
 
                 if ($result->status_code == 0)
                     return true;
-                    //return  "Case derived: $result->message \n";
+                   
                 else
                     return false;
-                    //return  "Error deriving case: $result->message \n";
-                    //print_r($result->status_code);
-                
+
             }
             catch ( Exception $e ){
                 return false;
@@ -110,10 +119,10 @@ class routeCaseSGN{
      
      function subeArchivo($idCaso,$pathFile)
      {       
-            //$idCaso   = '903788435561e803025a939083544181';
+
             $docUid   = '213801913562e773bbeb813098295973';         
             $idUsuario= '9848340814df501102959b6010421935';
-            //$pathFile = '/var/www/rest-excel/archivos/a_003/a_003.xls';
+
             
             $this->uploader = new uploaderFile(); 
             $this->uploader->upload_file($idCaso, $idUsuario, $pathFile, $docUid);       
@@ -151,7 +160,7 @@ class routeCaseSGN{
             $excel      = $ficheros1[$objfile_1];
 			
 		
-			//$idCaso     = '427920657566eee9ae3ca22039688636';
+
             $idCaso     = $app_uid;   
             $idUsuario  = '9848340814df501102959b6010421935';
 			$docUid     = '117600019566f0c7a4ca8c7050645875';
@@ -207,6 +216,4 @@ class routeCaseSGN{
      
 }
 
-//$x = new routeCaseSGN();
-//$x->subeArchivo2();
 ?>

@@ -13,23 +13,12 @@ require_once '/opt/processmaker/gulliver/thirdparty/bpmtech/libs/Excel/Classes/P
 require_once '/opt/processmaker/gulliver/thirdparty/bpmtech/facturas/scripts/funciones.php';
 require_once '/opt/processmaker/gulliver/thirdparty/bpmtech/facturas/scripts/conexion.php';
 
-//$class    = new grandCreater();
-//$nomina    = new routeCaseSGN();
 
-//RFC_Cliente = 'ORO110519CW0';
-//$rfc_Pagadora = 'AES111125T39';
-//$location = '/var/www/rest-excel/archivos/12062/12062.xlsx';
-//$location = 'SINDICATO.xls';
-
-//$params   = $class->grandReaderLayout($location);
-//$params   = $class->grandReaderLayoutCheques($location);
-
-//$rfc_Cliente =  $params->RFC_Cliente;
-//$rfc_Pagadora = $params->RFC_PAGADORA;
-//$execution = $nomina->buscaNomina($rfc_Cliente, $rfc_Pagadora, $location, $params);*/
-
-
-
+/*
+* The grandCreater class parse and XML file and return an array
+* with the info of the XML
+*
+*/
 class grandCreater
 {
 	function __Construct()
@@ -42,19 +31,32 @@ class grandCreater
 	
     function grandReaderLayout($location)
 	{		
-			// 'ya se modifico';
+		
 			if (!file_exists($location)){	
-			//echo $this->idCaso;
+
 			$this->funciones->writeError("Archivo $location no existe");
 			}	
 			$inputFileType = 'EXCEL5';
-			//$inputFileType = 'Excel2007';
-			$inputFileName = $location;			
+
+			/*
+			*$location has the path where the xml file has been saved
+			*/
+			$inputFileName = $location;
+
 			$objReader = PHPExcel_IOFactory::createReader($inputFileType);
+			
+			/*
+			* the listWorksheetNames method return an array with the sheetnames
+			*/
 			$sheetnames = $objReader->listWorksheetNames($inputFileName); //SHEETS IN XLS		
-			//print_r ($sheetnames);
+
 
 			$dualON = 0;
+
+			/*
+			*This loop find string to set varuables ($dualON, $chequesON) that its used 
+			*to choose the way to process the data
+			*/
 			for($i=0; $i<count($sheetnames); $i++){
 				if(preg_match('/Dual/i', $sheetnames[$i]))
 				{
@@ -76,19 +78,20 @@ class grandCreater
 				if($chequeON >= 0)
 				{
 	
-			$sheet = $this->getDualSheets($sheetnames);					
+			$sheet       = $this->getDualSheets($sheetnames);					
 			$objReader->setLoadSheetsOnly($sheetnames[$sheet]);
 			$objPHPExcel = $objReader->load($inputFileName);
-			$sheetData = $objPHPExcel->getActiveSheet();
-			$hoja_datos = $sheetData;
+			$sheetData   = $objPHPExcel->getActiveSheet();
+			$hoja_datos  = $sheetData;
 			$objectdatos = $this->showCheques($hoja_datos);	
-			$group1 = $this->showDual($hoja_datos);
-			//print_r ($group1);
+			$group1      = $this->showDual($hoja_datos);
+
 									
 			if($chequeON == 1)
 			{					
 			$objsheet   = $this->getChequesSheet($sheetnames);
 			$numCheques = count($objsheet);
+			
 			if ($numCheques>0)
 				{
 					$flagCheques = 1;
@@ -101,14 +104,14 @@ class grandCreater
 				$objReader->setLoadSheetsOnly($sheetnames[$objsheet_1]);
 				$objPHPExcel = $objReader->load($inputFileName);
 			    $sheetData   = $objPHPExcel->getActiveSheet();
-				$hoja_datos = $sheetData;
+				$hoja_datos  = $sheetData;
 				$objectdatos = $this->showCheques($hoja_datos);		
   				$group2 = $this->showCheques($hoja_datos);
 				$groupfinal[$a] = (array)$group2;
 			}
-				$resultante = $this->conjoinArray($groupfinal);	
-		        $arrayresultante= $this->conjoinArray($groupfinal);
-				$union = array_merge($group1, $arrayresultante);
+				$resultante      = $this->conjoinArray($groupfinal);	
+		        $arrayresultante = $this->conjoinArray($groupfinal);
+				$union           = array_merge($group1, $arrayresultante);
 				
 			}
 		}
@@ -158,8 +161,12 @@ class grandCreater
 			  }
 	     	}		
 	      }
-		  //print_r ($union);
-		  return $union;
+		
+
+	      /*
+	      * The $union array return the data of the xml file
+	      */
+		   return $union;
 	   }			
 		
 	
@@ -188,7 +195,7 @@ class grandCreater
 		$result = $this->conexion->get($query);
 		
 		if (!$row = mysql_fetch_assoc($result))
-		{	//echo "\n".$this->idCaso;		
+		{			
 			$this->funciones->writeError("Error: no existe registro en PMT_EMPRESA para $client -> $query");
 		}	
 

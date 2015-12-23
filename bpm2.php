@@ -17,18 +17,12 @@
             $user = $usuario;
             $pass = $password;
 
-            /*
-            *
-            *
-            *
-            */
-
             $Endpoint = "http://staging.portal-excel.com:10080/sysworkflow/en/classic/services/wsdl2";
             $client = new SoapClient($Endpoint);
             $params = array('userid'=>$user, 'password'=>$pass);
 
             /*
-            * On line 36, i call to process maker login web service
+            * On line 30, i call to process maker login web service
             * and if the call result is "ok", the code create a new path
             * and decode de $nomina parameter to get a file.
             */
@@ -48,7 +42,7 @@
        
 
                 /*
-                * On line 59 i create a new object of grandCreater class,
+                * On line 54 i create a new object of grandCreater class,
                 * the grandCreater class parse a xml file and return an array from the data of the same file
                 *
                 *
@@ -57,26 +51,45 @@
                 */
 
                 require_once "/var/www/rest-excel/classExcel2.php";
-                $class = new grandCreater();
+                $class     = new grandCreater();
                 $location  = $pathFile;               
-                $params   = $class->grandReaderLayout($location);
+                $params    = $class->grandReaderLayout($location);
+
+                /*
+                *
+                * I send the inside the $location parameter, the file path that its going to by parse
+                * to the grandReaderlayout method and return an multidimensional array
+                *
+                */
+
 
                 $params = json_decode( json_encode($params), true);
                     
-
+                /*
+                * From the array that the grandReaderLayout method return, I get the info of 
+                * $rfc_Cliente and $rfc_Pagadora
+                */
 
                 $rfc_Cliente  = $params[0]['RFC_CLIENTE'];
                 $rfc_Pagadora = $params[0]['RFC_PAGADORA'];
                 
                 /*
-                * On line 70 i create a new object of routeCaseSGN class,
-                * on line 71 the object call a method of the routeCaseSGN class and send parameters
+                * On line 84 the  object of routeCaseSGN class is created,
+                * on line 85 the object call a method of the routeCaseSGN class and send parameters
                 *
                 *
                 */
                 require_once "/var/www/rest-excel/consumeCaso.php";
                 
-                $route     = new routeCaseSGN();     
+                $route     = new routeCaseSGN(); 
+
+
+                /*
+                *
+                * I call  buscaNomina method from the routeCaseSGN Class and 
+                * send four params and the  get the result of the method inside $execution variable
+                *
+                */    
                 $execution = $route->buscaNomina($rfc_Cliente, $rfc_Pagadora, $location, $params);
          
                 return "El archivo se recibio correntamente".print_r($execution, true).print_r($result, true);
@@ -87,137 +100,6 @@
             }
 
         }
-
-        function enviaFactura($usuario, $password, $factura, $tipo){
-
-            $user = $usuario;
-            $pass = $password;
-
-            $Endpoint = "http://staging.portal-excel.com:10080/sysworkflow/en/classic/services/wsdl2";
-            $client = new SoapClient($Endpoint);
-            $params = array('userid'=>$user, 'password'=>$pass);
-
-            $fechaID = date("ymdHis");
-
-            $result = $client->__SoapCall('login', array($params));
-
-            if ($result->status_code == 0){
-
-                if($tipo == '1'){
-
-                    $path = "/var/www/rest-excel/facturas/".$fechaID;
-                    mkdir($path, 770);
-                    shell_exec("chmod -R 770 $path");
-
-                    $pathFile = $path."/".$fechaID.".zip";
-
-                }
-                if($tipo == '2'){
-
-                    $path = "/var/www/rest-excel/facturas_fondeo/".$fechaID;
-                    mkdir($path, 770);
-                    shell_exec("chmod 770 $path");
-
-                    $pathFile = $path."/".$fechaID.".zip";
-                    
-                }
-
-
-                $x = base64_decode($factura);
-                file_put_contents($pathFile,base64_decode($factura));
-
-                $zip = new ZipArchive;
-
-                if ($zip->open($pathFile) === TRUE) {
-                    $zip->extractTo($path);
-                    $zip->close();
-                    $zip_r ='zip ok';
-                } else {
-                    $zip_r ='failed';
-                }
-
-                
-                
-                require_once "/var/www/rest-excel/classFacturas.php";
-                $caso='965564549564badf9a92186072323503';              
-                $fact = new Facturas($caso);
-                $resultado = $fact->mainMethod($caso, $path, $fechaID, $tipo);
-                
-                return $resultado;
-
-            }else
-            {
-                return "Error favor de revisar usuario o password";
-            }
-
-        }
-
-
-
-        function cancelaFactura($usuario, $password, $factura, $tipo){
-
-            $user = $usuario;
-            $pass = $password;
-
-            $Endpoint = "http://staging.portal-excel.com:10080/sysworkflow/en/classic/services/wsdl2";
-            $client = new SoapClient($Endpoint);
-            $params = array('userid'=>$user, 'password'=>$pass);
-
-            $fechaID = date("ymdHis");
-
-            $result = $client->__SoapCall('login', array($params));
-
-            if ($result->status_code == 0){
-
-
-                if($tipo == '1'){
-
-                    $path = "/var/www/rest-excel/facturas_canceladas/".$fechaID;
-                    mkdir($path, 770);
-                    shell_exec("chmod -R 770 $path");
-
-                    $pathFile = $path."/".$fechaID.".zip";
-
-                }
-                if($tipo == '2'){
-
-                    $path = "/var/www/rest-excel/facturas_canceladas_fondeo/".$fechaID;
-                    mkdir($path, 770);
-                    shell_exec("chmod 770 $path");
-
-                    $pathFile = $path."/".$fechaID.".zip";
-                    
-                }
-
-                $x = base64_decode($factura);
-                file_put_contents($pathFile,base64_decode($factura));
-
-                $zip = new ZipArchive;
-
-                if ($zip->open($pathFile) === TRUE) {
-                    $zip->extractTo($path);
-                    $zip->close();
-                    $zip_r ='zip ok';
-                } else {
-                    $zip_r ='failed';
-                }
-
-                
-                
-                require_once "/var/www/rest-excel/classFacturasCancel.php";
-                $caso ='965564549564badf9a92186072323503';               
-                $fact = new Facturas($caso);
-                $fact->mainMethod($caso, $path, $fechaID, $tipo);
-                
-                return "El archivo factura se recibio correntamente ".$zip_r;
-            }else
-            {
-                return "Error favor de revisar usuario o password";
-            }
-
-        }
-
-
 
 
 
